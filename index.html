@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Saúde em Dia</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#354E43">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Saúde em Dia">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--sage:#A8C9B0;--cream:#F7F4ED;--peach:#EFB9A7;--lav:#D7C8E8;--dark:#354E43;--card:#fff;--text:#354E43;--fs:16px;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px)}
+:root[data-hc="1"]{--cream:#fff;--text:#000;--dark:#0b2a1c;--sage:#5f9a73}
+*{box-sizing:border-box}html,body{margin:0;height:100%}
+body{font-family:Nunito,system-ui,sans-serif;background:var(--cream);color:var(--text);font-size:var(--fs);max-width:520px;margin:0 auto}
+main{padding:16px 16px 110px}
+h1{font-size:1.5em;margin:.2em 0}h2{font-size:1.15em;margin:1em 0 .5em}
+.card{background:var(--card);border-radius:22px;padding:16px;margin:12px 0;box-shadow:0 2px 10px #354e4314}
+.btn{border:0;border-radius:16px;padding:14px 16px;font:inherit;font-weight:800;background:var(--sage);color:var(--dark);cursor:pointer;min-height:48px}
+.btn.p{background:var(--peach)}.btn.l{background:var(--lav)}.btn.d{background:var(--dark);color:#fff}
+.row{display:flex;gap:8px;flex-wrap:wrap}.row>*{flex:1}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.food{background:var(--cream);border:2px solid transparent;border-radius:18px;padding:10px 4px;text-align:center;font:inherit;color:var(--text);cursor:pointer}
+.food span{display:block;font-size:2em}.food small{font-weight:600}
+.chip{border:2px solid var(--sage);background:#fff;border-radius:99px;padding:8px 12px;font:inherit;color:var(--text);cursor:pointer}
+.chip.on{background:var(--sage)}
+input,select{width:100%;padding:12px;border-radius:12px;border:2px solid var(--sage);font:inherit;margin:4px 0 10px;background:#fff;color:#000}
+label{font-weight:800;font-size:.9em}
+nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;display:flex;background:#fff;border-radius:22px 22px 0 0;box-shadow:0 -2px 12px #354e4322;padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px))}
+nav button{flex:1;border:0;background:none;font:inherit;font-size:.72em;font-weight:800;color:var(--text);padding:6px 0;cursor:pointer;border-radius:14px}
+nav button b{display:block;font-size:1.7em}nav button.on{background:var(--sage)}
+.bottle{width:110px;height:200px;border:4px solid var(--dark);border-radius:30px 30px 18px 18px;margin:0 auto;position:relative;overflow:hidden;background:#fff}
+.bottle div{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(#bfe3f0,#7fc3dc);transition:height .6s}
+.bar{height:12px;background:var(--cream);border-radius:9px;overflow:hidden}.bar i{display:block;height:100%;background:var(--sage);transition:width .5s}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+.cal div{padding:6px 0;border-radius:10px;min-height:44px;font-size:.85em}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin:0 1px}
+.warn{background:var(--peach);border-radius:16px;padding:12px;font-weight:600}
+.muted{opacity:.75;font-size:.9em}
+.item{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--cream)}
+@media print{nav,.noprint{display:none!important}main{padding:0}.card{box-shadow:none;border:1px solid #ccc}}
+</style></head><body><main id="app"></main><nav id="nav"></nav>
+<script>
+const KEY='saudeemdia_v1';
+const today=()=>new Date().toISOString().slice(0,10);
+let S={profile:null,meals:[],water:[],supps:[],events:[],symptoms:[],ex:[],wt:[],tk:[],goal:1500,protGoal:60,fs:16,hc:0,favs:[]};
+try{const r=localStorage.getItem(KEY);if(r)S=Object.assign(S,JSON.parse(r))}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+let tab='inicio',mealType='Café da manhã',plate={},calM=new Date();
+const FOODS=[
+['Ovo','🥚','Proteínas','unidade',6],['Frango','🍗','Proteínas','colher',7],['Peixe','🐟','Proteínas','fatia',9],['Carne moída','🥩','Proteínas','colher',6],['Queijo','🧀','Proteínas','fatia',5],['Iogurte','🥛','Proteínas','pote',8],
+['Arroz','🍚','Grãos','colher',1],['Feijão','🫘','Grãos','colher',2],['Lentilha','🥣','Grãos','colher',2],
+['Banana','🍌','Frutas','unidade',1],['Maçã','🍎','Frutas','unidade',0],['Mamão','🍈','Frutas','fatia',0],
+['Alface','🥬','Verduras','prato',1],['Brócolis','🥦','Verduras','colher',1],['Cenoura','🥕','Verduras','colher',0],['Tomate','🍅','Verduras','unidade',0],
+['Pão','🍞','Outros','fatia',3],['Leite','🥛','Outros','100 ml',3],['Castanhas','🥜','Outros','colher',3],
+['Atum','🐟','Proteínas','colher',5],['Sardinha','🐟','Proteínas','unidade',6],['Tilápia','🐟','Proteínas','filé',15],['Peito de peru','🦃','Proteínas','fatia',3],['Presunto','🥓','Proteínas','fatia',2],['Tofu','🧊','Proteínas','fatia',5],['Ricota','🧀','Proteínas','fatia',4],['Cottage','🥣','Proteínas','colher',3],['Proteína em pó','🥤','Proteínas','dose',15],['Camarão','🦐','Proteínas','unidade',2],['Omelete','🍳','Proteínas','unidade',12],
+['Grão-de-bico','🫘','Grãos','colher',2],['Ervilha','🫛','Grãos','colher',1],['Batata','🥔','Grãos','colher',1],['Macarrão','🍝','Grãos','colher',1],['Aveia','🌾','Grãos','colher',1],['Mandioca','🍠','Grãos','colher',0],['Torrada','🍞','Grãos','unidade',1],
+['Pera','🍐','Frutas','unidade',0],['Laranja','🍊','Frutas','unidade',1],['Morango','🍓','Frutas','unidade',0],['Melancia','🍉','Frutas','fatia',0],['Uva','🍇','Frutas','cacho pequeno',0],['Abacate','🥑','Frutas','colher',1],['Melão','🍈','Frutas','fatia',0],
+['Abobrinha','🥒','Verduras','colher',0],['Couve','🥬','Verduras','colher',1],['Chuchu','🥒','Verduras','colher',0],['Beterraba','🫜','Verduras','colher',0],['Espinafre','🥬','Verduras','colher',1],['Vagem','🫛','Verduras','colher',1],['Abóbora','🎃','Verduras','colher',0],
+['Leite vegetal','🥛','Outros','100 ml',1],['Amendoim','🥜','Outros','colher',3],['Gelatina','🍮','Outros','pote',2],['Biscoito','🍪','Outros','unidade',1],
+['Sopa de legumes','🍲','Sopas e caldos','prato',3],['Caldo de frango','🍵','Sopas e caldos','copo',4],['Caldo de feijão','🍲','Sopas e caldos','concha',3],['Canja','🍲','Sopas e caldos','prato',8]];
+const CATS=['Proteínas','Grãos','Frutas','Verduras','Sopas e caldos','Outros'];
+const EVT={Consulta:'#354E43',Exame:'#EFB9A7','Vitaminas':'#A8C9B0',Exercício:'#D7C8E8',Pesagem:'#8a8a8a',Prevenção:'#e0b84a'};
+const $=s=>document.querySelector(s);
+const sum=a=>a.reduce((x,y)=>x+y,0);
+const waterToday=()=>sum(S.water.filter(w=>w.d==today()).map(w=>w.ml));
+const protToday=()=>sum(S.meals.filter(m=>m.d==today()).map(m=>m.prot));
+function apply(){document.documentElement.style.setProperty('--fs',S.fs+'px');document.documentElement.dataset.hc=S.hc}
+function go(t){tab=t;render()}
+function render(){apply();
+ $('#nav').style.display=S.profile&&!rep?'flex':'none';
+ $('#nav').innerHTML=[['inicio','🏠','Início'],['alim','🍽️','Alimentação'],['agua','💧','Água'],['cal','📅','Calendário'],['saude','🌿','Saúde']].map(([k,i,n])=>`<button class="${tab==k?'on':''}" onclick="go('${k}')"><b>${i}</b>${n}</button>`).join('');
+ $('#app').innerHTML=!S.profile?onboard():rep?report():({inicio,alim,agua,cal,saude}[tab])();
+ window.scrollTo(0,0)}
+function onboard(){return `<h1>Bem-vinda ao Saúde em Dia 🌿</h1><p class="muted">Vamos personalizar o app para você. Seus dados ficam apenas neste aparelho.</p>
+<div class="card"><label>Nome</label><input id="o_n"><label>Idade</label><input id="o_i" type="number">
+<label>Altura (cm)</label><input id="o_a" type="number"><label>Peso atual (kg)</label><input id="o_p" type="number"><label>Peso de referência (kg)</label><input id="o_r" type="number">
+<label>Cirurgia</label><select id="o_c"><option>Bypass gástrico</option></select>
+<label>Data aproximada da cirurgia</label><input id="o_d" type="month">
+<label>Restrições e intolerâncias</label><input id="o_rs" placeholder="Ex.: lactose, doces">
+<label>Condições de saúde e medicamentos</label><input id="o_m">
+<label>Meta de água (ml/dia, conforme equipe de saúde)</label><input id="o_w" type="number" value="1500">
+<label>Meta de proteína (g/dia, conforme equipe de saúde)</label><input id="o_pr" type="number" value="60">
+<button class="btn d" style="width:100%" onclick="saveProfile()">Começar</button></div>`}
+function saveProfile(){const v=i=>$('#'+i).value;if(!v('o_n').trim())return alert('Informe seu nome');
+ S.profile={nome:v('o_n').trim(),idade:v('o_i'),altura:v('o_a'),peso:v('o_p'),ref:v('o_r'),cirurgia:v('o_c'),data:v('o_d'),restr:v('o_rs'),med:v('o_m')};
+ S.goal=+v('o_w')||1500;S.protGoal=+v('o_pr')||60;save();render()}
+function inicio(){const h=new Date().getHours(),g=h<12?'Bom dia':h<18?'Boa tarde':'Boa noite';
+ const w=waterToday(),pr=protToday(),pend=S.supps.filter(s=>s.last!=today()).length,ev=S.events.filter(e=>e.d==today());
+ return `<h1>${g}, ${S.profile.nome}! 🌿</h1><p class="muted">Acompanhamento de longo prazo. Um passo de cada vez, no seu ritmo.</p>
+<div class="card"><b>💧 Água</b> ${w} / ${S.goal} ml<div class="bar"><i style="width:${Math.min(100,w/S.goal*100)}%"></i></div></div>
+<div class="card"><b>🥚 Proteínas (estimativa)</b> ${pr} / ${S.protGoal} g<div class="bar"><i style="width:${Math.min(100,pr/S.protGoal*100)}%"></i></div></div>
+<div class="card"><b>💊 Suplementos</b><br>${S.supps.length?(pend?pend+' ainda não marcado(s) hoje':'Tudo certo por hoje! ✨'):'Nenhum cadastrado ainda'}</div>
+<div class="card"><b>📅 Hoje</b><br>${ev.length?ev.map(e=>e.t+' ('+e.k+')').join('<br>'):'Sem compromissos'}</div>
+<div class="row"><button class="btn" onclick="go('alim')">Registrar refeição</button><button class="btn l" onclick="addW(200)">+200 ml</button></div>`}
+function alim(){const items=Object.keys(plate).filter(k=>plate[k]>0);
+ const last=S.meals.filter(m=>m.d==today()).slice(-5).reverse();
+ return `<h1>Alimentação 🍽️</h1><div class="row" style="margin-bottom:8px">${['Café da manhã','Almoço','Jantar','Lanche'].map(m=>`<button class="chip ${m==mealType?'on':''}" onclick="mealType='${m}';render()">${m}</button>`).join('')}</div>
+<div class="card"><b>Seu prato</b> <span class="muted">(toque nos alimentos para adicionar)</span>
+${items.length?items.map(k=>{const f=FOODS[k];return `<div class="item"><span>${f[1]} ${f[0]}: <b>${plate[k]}</b> ${f[3]}</span><button class="chip" onclick="plate[${k}]--;render()">−</button></div>`}).join(''):'<p class="muted">Vazio por enquanto</p>'}
+<label>Sintoma após comer (opcional)</label><select id="sym"><option value="">Nenhum</option><option>Enjoo</option><option>Dumping</option><option>Dor ou desconforto</option><option>Refluxo</option></select>
+<button class="btn d" style="width:100%" onclick="saveMeal()">Registrar refeição</button></div>
+${CATS.map(c=>`<h2>${c}</h2><div class="grid">${FOODS.map((f,i)=>f[2]==c?`<button class="food" onclick="plate[${i}]=(plate[${i}]||0)+1;render()"><span>${f[1]}</span><b>${f[0]}</b><br><small>${f[3]}</small>${plate[i]?'<br><b>×'+plate[i]+'</b>':''}</button>`:'').join('')}</div>`).join('')}
+<h2>Hoje</h2><div class="card">${last.length?last.map((m,i)=>`<div class="item"><span><b>${m.type}</b><br><small>${m.desc}</small></span><button class="chip" onclick="repeatMeal(${S.meals.indexOf(m)})">Repetir</button></div>`).join(''):'<span class="muted">Nenhuma refeição registrada hoje</span>'}</div>
+<p class="muted">Valores de proteína são estimativas educativas. Siga as porções definidas pela sua equipe de saúde.</p>`}
+function saveMeal(){const it=Object.keys(plate).filter(k=>plate[k]>0);if(!it.length)return alert('Escolha ao menos um alimento');
+ const m={d:today(),type:mealType,items:Object.fromEntries(it.map(k=>[k,plate[k]])),prot:sum(it.map(k=>FOODS[k][4]*plate[k])),desc:it.map(k=>plate[k]+' '+FOODS[k][3]+' '+FOODS[k][0]).join(', ')};
+ const s=$('#sym').value;if(s)S.symptoms.push({d:today(),s:s+' (após refeição)',i:'-'});
+ S.meals.push(m);plate={};save();render()}
+function repeatMeal(i){plate=Object.assign({},S.meals[i].items);mealType=S.meals[i].type;render()}
+function addW(ml){S.water.push({d:today(),ml});save();render()}
+function agua(){const w=waterToday(),p=Math.min(100,w/S.goal*100);
+ const days=[...Array(7)].map((_,i)=>{const d=new Date();d.setDate(d.getDate()-6+i);const k=d.toISOString().slice(0,10);return [k.slice(8),sum(S.water.filter(x=>x.d==k).map(x=>x.ml))]});
+ return `<h1>Água 💧</h1><div class="card" style="text-align:center"><div class="bottle"><div style="height:${p}%"></div></div><h2>${w} / ${S.goal} ml</h2>
+<div class="row">${[50,100,150,200,250].map(v=>`<button class="btn" onclick="addW(${v})">${v} ml</button>`).join('')}</div>
+<div class="row" style="margin-top:8px"><input id="cw" type="number" placeholder="Outra quantidade (ml)"><button class="btn l" onclick="addW(+$('#cw').value||0)">Adicionar</button></div>
+<div class="row"><button class="btn p" onclick="undoW()">Desfazer último</button><button class="btn l" onclick="setGoal()">Ajustar meta</button></div></div>
+<div class="card"><b>Últimos 7 dias</b><div style="display:flex;gap:6px;align-items:flex-end;height:110px;margin-top:8px">${days.map(d=>`<div style="flex:1;text-align:center;font-size:.75em"><div style="background:var(--sage);border-radius:8px;height:${Math.min(80,d[1]/S.goal*80)}px"></div>${d[0]}</div>`).join('')}</div></div>
+<p class="muted">Ative os lembretes de água em Saúde. Beba aos poucos, em pequenos goles, ao longo do dia.</p>`}
+function undoW(){const i=S.water.map(x=>x.d).lastIndexOf(today());if(i>=0)S.water.splice(i,1);save();render()}
+function setGoal(){const v=+prompt('Meta diária de água (ml), conforme orientação profissional:',S.goal);if(v>0){S.goal=v;save();render()}}
+function cal(){const y=calM.getFullYear(),m=calM.getMonth(),first=new Date(y,m,1).getDay(),n=new Date(y,m+1,0).getDate();
+ let cells=['D','S','T','Q','Q','S','S'].map(x=>`<div class="muted"><b>${x}</b></div>`).join('')+'<div></div>'.repeat(first);
+ for(let d=1;d<=n;d++){const k=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;const es=S.events.filter(e=>e.d==k);
+  cells+=`<div style="${k==today()?'background:var(--sage)':''}">${d}<br>${es.slice(0,3).map(e=>`<i class="dot" style="background:${EVT[e.k]}"></i>`).join('')}</div>`}
+ const up=S.events.filter(e=>e.d>=today()).sort((a,b)=>a.d>b.d?1:-1).slice(0,8),past=S.events.filter(e=>e.d<today()).slice(-3);
+ return `<h1>Calendário 📅</h1><div class="card"><div class="row" style="align-items:center"><button class="chip" onclick="calM=new Date(${y},${m-1},1);render()">‹</button><b style="text-align:center">${calM.toLocaleDateString('pt-BR',{month:'long',year:'numeric'})}</b><button class="chip" onclick="calM=new Date(${y},${m+1},1);render()">›</button></div><div class="cal">${cells}</div>
+<div style="margin-top:8px;font-size:.8em">${Object.entries(EVT).map(([k,c])=>`<i class="dot" style="background:${c}"></i>${k} `).join('')}</div></div>
+<div class="card"><b>Novo compromisso</b><select id="ek">${Object.keys(EVT).map(k=>`<option>${k}</option>`).join('')}</select><input id="et" placeholder="Título (ex.: Consulta nutricionista)"><input id="ed" type="date" value="${today()}"><input id="eh" type="time">
+<button class="btn d" style="width:100%" onclick="addEv()">Adicionar</button></div>
+<div class="card"><b>Próximos</b>${up.length?up.map(e=>evRow(e)).join(''):'<p class="muted">Nada agendado</p>'}</div>
+${past.length?`<div class="card"><b>Histórico recente</b>${past.map(e=>evRow(e)).join('')}</div>`:''}`}
+const evRow=e=>`<div class="item"><span><i class="dot" style="background:${EVT[e.k]}"></i> ${e.d.split('-').reverse().slice(0,2).join('/')} ${e.h||''} · ${e.t}</span><button class="chip" onclick="delEv(${S.events.indexOf(e)})">✕</button></div>`;
+function addEv(){const t=$('#et').value.trim()||$('#ek').value;S.events.push({k:$('#ek').value,t,d:$('#ed').value,h:$('#eh').value});save();notifyAsk();render()}
+function delEv(i){S.events.splice(i,1);save();render()}
+function notifyAsk(){try{if('Notification' in window&&Notification.permission=='default')Notification.requestPermission()}catch(e){}}
+function saude(){const SY=['😖 Dor abdominal','🤢 Enjoo','🥵 Dumping','😵 Tontura','🔥 Refluxo','😴 Cansaço','🥶 Sede intensa'];
+ return `<h1>Saúde 🌿</h1>${exCard()}${evoCard()}${libCard()}
+<div class="card"><b>💊 Suplementos</b>${S.supps.map((s,i)=>`<div class="item"><span>${s.n} · ${s.dose}<br><small>${s.h} · ${s.f}</small></span>${s.last==today()?'<b>✔ Tomei</b>':`<button class="btn" onclick="took(${i})">Tomei</button>`}<button class="chip" onclick="S.supps.splice(${i},1);save();render()">✕</button></div>`).join('')||'<p class="muted">Cadastre os suplementos prescritos</p>'}
+<select id="sn"><option>Ferro</option><option>Vitamina B12</option><option>Cálcio</option><option>Vitamina D</option><option>Multivitamínico</option><option>Outro</option></select>
+<div class="row"><input id="sd" placeholder="Dose"><input id="sh" type="time"></div><select id="sf"><option>Diário</option><option>Semanal</option><option>Outra frequência</option></select>
+<button class="btn d" style="width:100%" onclick="addSupp()">Adicionar suplemento</button>
+<p class="muted">Ferro, B12, cálcio e vitamina D costumam exigir suplementação contínua e exames de acompanhamento após bypass. Siga sempre as doses prescritas pela sua equipe.</p></div>
+<div class="card"><b>Como você está? Registro de sintomas</b><div class="row" style="margin:8px 0">${SY.map(s=>`<button class="chip" onclick="sym('${s}')">${s}</button>`).join('')}</div>
+<label>Intensidade</label><select id="si"><option>Leve</option><option>Moderada</option><option>Forte</option></select>
+${S.symptoms.slice(-4).reverse().map(s=>`<div class="item"><small>${s.d.slice(5).split('-').reverse().join('/')} · ${s.s} · ${s.i}</small></div>`).join('')}
+<div class="warn" style="margin-top:8px">⚠️ Dor abdominal intensa, vômitos persistentes, desmaio ou incapacidade de ingerir líquidos: procure atendimento médico imediatamente.</div></div>
+${pratoCard()}
+<div class="card"><b>⚙️ Acessibilidade e dados</b><div class="row" style="margin:8px 0"><button class="btn" onclick="S.fs=Math.min(24,S.fs+2);save();render()">A+</button><button class="btn" onclick="S.fs=Math.max(14,S.fs-2);save();render()">A−</button><button class="btn l" onclick="S.hc=1-S.hc;save();render()">Contraste</button></div>
+<div class="row"><button class="btn p" onclick="remind()">Ativar lembretes</button><button class="btn l" onclick="expo()">Exportar dados</button></div>
+<button class="btn d" style="width:100%;margin-top:8px" onclick="wipe()">Excluir todos os meus dados</button>
+<p class="muted">Seus dados ficam somente neste aparelho (LGPD) e não são compartilhados.</p></div>`}
+const EX=[['Caminhada','🚶','Ritmo confortável, postura ereta, respirando normalmente. Comece com poucos minutos e aumente aos poucos.'],['Alongamento','🧘','Movimentos lentos, sem forçar. Mantenha cada posição por 20 a 30 segundos.'],['Mobilidade','🤸','Círculos suaves com ombros, quadril e tornozelos, sem dor.'],['Fortalecimento','💪','Sentar e levantar da cadeira, elevação de braços com peso leve. Peça orientação ao seu profissional.']];
+let exSel=0;
+function exCard(){const wk=[...Array(7)].map((_,i)=>{const d=new Date();d.setDate(d.getDate()-i);return d.toISOString().slice(0,10)});const w=S.ex.filter(e=>wk.includes(e.d));const e=EX[exSel];
+ return `<div class="card"><b>🏃 Exercícios</b><div class="row" style="margin:8px 0">${EX.map((x,i)=>`<button class="chip ${i==exSel?'on':''}" onclick="exSel=${i};render()">${x[1]} ${x[0]}</button>`).join('')}</div><p>${e[2]}</p><div class="row"><input id="exm" type="number" placeholder="Minutos" value="15"><button class="btn" onclick="addEx()">Concluí ✔</button></div><p><b>Esta semana:</b> ${w.length} atividade(s), ${sum(w.map(x=>x.m))} min</p>${S.ex.slice(-3).reverse().map(x=>`<div class="item"><small>${x.d.slice(5).split('-').reverse().join('/')} · ${x.n} · ${x.m} min</small></div>`).join('')}<p class="muted">Siga a liberação do seu médico e respeite seus limites. Descansar também faz parte do cuidado.</p></div>`}
+function addEx(){const m=+$('#exm').value||0;if(m<=0)return;S.ex.push({d:today(),n:EX[exSel][0],m});save();render()}
+let evoSel='agua',rep=false;
+const dk=n=>{const d=new Date();d.setDate(d.getDate()-n);return d.toISOString().slice(0,10)};
+function series(m,n){if(m=='peso')return S.wt.slice(-n).map(x=>[x.d.slice(5).split('-').reverse().join('/'),x.kg]);
+ return [...Array(n)].map((_,i)=>{const k=dk(n-1-i),f=a=>a.filter(x=>x.d==k);const v={agua:()=>sum(f(S.water).map(x=>x.ml)),prot:()=>sum(f(S.meals).map(x=>x.prot)),ex:()=>sum(f(S.ex).map(x=>x.m)),sup:()=>f(S.tk).length,sint:()=>f(S.symptoms).length}[m]();return [k.slice(8),v]})}
+function bars(d,c){const mx=Math.max(1,...d.map(x=>x[1]));return `<div style="display:flex;gap:4px;align-items:flex-end;height:120px">${d.map(x=>`<div style="flex:1;text-align:center;font-size:.65em"><div>${x[1]||''}</div><div style="background:${c};border-radius:6px;height:${x[1]/mx*80}px;min-height:${x[1]?3:0}px"></div>${x[0]}</div>`).join('')}</div>`}
+function evoCard(){const M=[['agua','💧 Água','ml'],['prot','🥚 Proteínas','g'],['ex','🏃 Exercícios','min'],['sup','💊 Suplementos','doses'],['sint','🌡️ Sintomas','registros'],['peso','⚖️ Peso','kg']];const m=M.find(x=>x[0]==evoSel);
+ return `<div class="card"><b>📈 Evolução</b><div class="row" style="margin:8px 0">${M.map(x=>`<button class="chip ${x[0]==evoSel?'on':''}" onclick="evoSel='${x[0]}';render()">${x[1]}</button>`).join('')}</div>${evoSel=='peso'?(S.wt.length?'':'<p class="muted">A pesagem é opcional. Registre apenas se quiser acompanhar.</p>')+'<div class="row"><input id="kg" type="number" step="0.1" placeholder="Peso (kg)"><button class="btn l" onclick="addKg()">Registrar</button></div>':''}${bars(series(evoSel,evoSel=='peso'?10:14),'var(--sage)')}<p class="muted">${m[2]} · ${evoSel=='peso'?'últimos registros':'últimos 14 dias'}</p><button class="btn d" style="width:100%" onclick="rep=true;render()">📄 Gerar relatório para profissionais</button></div>`}
+function addKg(){const v=+$('#kg').value;if(v>0){S.wt.push({d:today(),kg:v});save();render()}}
+function report(){const p=S.profile,days=[...Array(7)].map((_,i)=>dk(i));const f=(a,k)=>a.filter(x=>x.d==k);const fm=d=>d.split('-').reverse().join('/');
+ return `<div class="noprint row" style="margin-bottom:10px"><button class="btn" onclick="rep=false;render()">← Voltar</button><button class="btn d" onclick="window.print()">Imprimir / salvar PDF</button></div>
+<h1>Relatório Saúde em Dia</h1><p>Gerado em ${fm(today())}</p>
+<div class="card"><b>Paciente:</b> ${p.nome}, ${p.idade||'—'} anos<br>Altura: ${p.altura||'—'} cm · Peso atual: ${p.peso||'—'} kg · Referência: ${p.ref||'—'} kg<br>Cirurgia: ${p.cirurgia}${p.data?' ('+p.data+')':''}<br>Restrições: ${p.restr||'—'}<br>Condições/medicamentos: ${p.med||'—'}<br>Metas: ${S.goal} ml de água, ${S.protGoal} g de proteína por dia</div>
+<div class="card"><b>Últimos 7 dias</b><table style="width:100%;font-size:.85em;border-collapse:collapse"><tr><th align=left>Dia<th>Água ml<th>Prot. g (est.)<th>Exerc. min<th>Suplem.<th>Sintomas</tr>${days.map(k=>`<tr><td>${fm(k).slice(0,5)}<td align=center>${sum(f(S.water,k).map(x=>x.ml))}<td align=center>${sum(f(S.meals,k).map(x=>x.prot))}<td align=center>${sum(f(S.ex,k).map(x=>x.m))}<td align=center>${f(S.tk,k).length}<td align=center>${f(S.symptoms,k).length}</tr>`).join('')}</table></div>
+<div class="card"><b>Suplementos cadastrados</b><br>${S.supps.map(s=>`${s.n} · ${s.dose} · ${s.h} · ${s.f}`).join('<br>')||'—'}</div>
+<div class="card"><b>Sintomas recentes</b><br>${S.symptoms.slice(-10).reverse().map(s=>`${fm(s.d).slice(0,5)} · ${s.s} · ${s.i}`).join('<br>')||'Nenhum registro'}</div>
+<div class="card"><b>Pesagens</b><br>${S.wt.slice(-10).map(x=>`${fm(x.d)}: ${x.kg} kg`).join('<br>')||'Sem registros'}</div>
+<p class="muted">Dados autorregistrados; as proteínas são estimativas. Não substitui avaliação profissional.</p>`}
+const LIB=[
+['🩸','Anemia e deficiências nutricionais','Após o bypass, o corpo absorve menos ferro, vitamina B12 e outros nutrientes, por isso a falta deles pode surgir aos poucos, mesmo com boa alimentação. Sinais comuns: cansaço, palidez, falta de ar, queda de cabelo, formigamento nas mãos e nos pés.','tomar os suplementos prescritos todos os dias e fazer os exames de sangue no ritmo definido pela sua equipe.','Cansaço intenso, falta de ar, tontura ou formigamento que não passa: converse com seu médico para avaliar os exames.'],
+['🦴','Saúde óssea','A absorção de cálcio e vitamina D também diminui, e isso pode enfraquecer os ossos ao longo dos anos, muitas vezes sem sintomas.','suplementação conforme prescrição, exames periódicos e atividade física com fortalecimento, liberada pelo médico. Pergunte à sua equipe sobre os melhores horários do cálcio e do ferro, pois um pode atrapalhar a absorção do outro.','Dor óssea persistente ou fratura após pequenos impactos: procure atendimento médico.'],
+['🌪️','Síndrome de dumping','Pode ocorrer quando o alimento passa rápido demais para o intestino, geralmente após doces, gorduras ou refeições grandes. Sinais: suor, palpitação, enjoo, cólica, diarreia, fraqueza.','fazer refeições pequenas, mastigar bem, priorizar proteínas e evitar açúcares simples. Anote o que comeu no registro de sintomas para mostrar à nutricionista.','Episódios frequentes ou que atrapalham o dia a dia: converse com sua equipe.'],
+['🍬','Hipoglicemia pós-bariátrica','Em algumas pessoas, o açúcar no sangue cai de 1 a 3 horas após comer. Sinais: tremor, suor frio, fome repentina, tontura, confusão.','combinar proteína com carboidratos de absorção lenta e evitar açúcares simples. Peça à sua equipe um plano para agir durante um episódio.','Desmaio, confusão intensa ou episódios repetidos: procure atendimento médico.'],
+['💧','Desidratação','O estômago menor faz com que seja difícil beber muito de uma vez. Sinais: sede, boca seca, urina escura, tontura, dor de cabeça.','tomar pequenos goles ao longo do dia, usar a garrafa virtual do app e ajustar a meta com sua equipe, especialmente em dias quentes ou de exercício.','Se não conseguir ingerir líquidos, tiver vômitos persistentes ou desmaio: procure atendimento imediato.'],
+['🤢','Desconfortos digestivos','Enjoo, estufamento, refluxo ou dor podem aparecer quando se come rápido, em porções grandes ou com alimentos mal tolerados.','mastigar bem, comer devagar, parar ao sentir saciedade e anotar os alimentos que não caem bem.','Dor abdominal intensa ou vômitos que não param: procure atendimento médico imediato.'],
+['📅','Acompanhamento de longo prazo','O cuidado não termina depois do primeiro ano. Consultas, exames e suplementos continuam importantes para a vida toda.','manter as consultas com médico e nutricionista na frequência que sua equipe indicar e usar o calendário do app para não perder exames.','Ficou muito tempo sem acompanhamento? Retomar é sempre possível, sem culpa. Agende uma consulta.'],
+['💜','Bem-estar emocional','A relação com a comida, a imagem corporal e o humor podem mudar depois da cirurgia, e isso é comum.','conversar com pessoas de confiança, manter uma rotina de descanso e considerar acompanhamento psicológico.','Tristeza persistente ou sofrimento intenso: procure apoio profissional. O CVV atende 24 horas pelo telefone 188.']];
+function libCard(){return `<div class="card"><b>📚 Biblioteca educativa</b><p class="muted">Conteúdo geral e educativo, ainda sem revisão de profissionais de saúde. Não substitui a orientação da sua equipe.</p>${LIB.map(t=>`<details style="padding:8px 0;border-bottom:1px solid var(--cream)"><summary style="font-weight:800;cursor:pointer;min-height:36px">${t[0]} ${t[1]}</summary><p>${t[2]}</p><p><b>Pode ajudar:</b> ${t[3]}</p><p class="warn">⚠️ ${t[4]}</p></details>`).join('')}</div>`}
+const PR=[
+['Omelete de espinafre com ricota','🍳🥬🧀','ovos','espinafre','ricota','vg sg mc','Bata os ovos, misture o espinafre picado e cozinhe em fogo baixo. Finalize com ricota em pedaços pequenos.'],
+['Frango desfiado com abóbora','🍗🎃🍚','frango','abóbora','arroz','sl sg mc','Cozinhe o frango, desfie bem e sirva com abóbora macia e um pouco de arroz.'],
+['Tilápia ao forno com legumes','🐟🥕🥦','tilápia','cenoura e brócolis','batata','sl sg mc','Asse o filé temperado com ervas junto com legumes cozidos até ficarem macios.'],
+['Tofu mexido com legumes','🧊🥒🍅','tofu','abobrinha e tomate','torrada','sl vg mc','Esfarele o tofu e refogue com abobrinha e tomate em cubinhos até secar o líquido.'],
+['Sopa de lentilha com legumes','🍲🫘🥕','lentilha','cenoura e chuchu','—','sl vg sg mc','Cozinhe a lentilha com os legumes e tempero suave, e bata ou amasse se preferir mais macia.'],
+['Cottage com frutas macias','🥣🍌🍓','cottage','banana e morango','aveia','vg mc','Misture o cottage com fruta amassada e polvilhe um pouco de aveia.'],
+['Carne moída com chuchu e purê','🥩🥒🍠','carne moída','chuchu','purê de mandioca','sl sg mc','Refogue a carne com chuchu em cubos pequenos e sirva com purê de mandioca.'],
+['Atum com grão-de-bico e salada','🐟🫘🥬','atum','alface e tomate','grão-de-bico','sl sg','Misture o atum com grão-de-bico cozido e salada picada, temperando com limão.'],
+['Canja de frango','🍲🍗🥕','frango','cenoura','arroz','sl sg mc','Cozinhe o frango desfiado com arroz e cenoura em caldo caseiro até ficar bem macio.']];
+const PF=[['sl','Sem lactose'],['vg','Vegetariano'],['sg','Sem glúten'],['mc','Textura macia']];
+let pf=S.pf||[];
+function pratoCard(){const L=PR.filter(r=>pf.every(t=>r[5].split(' ').includes(t)));
+ return `<div class="card"><b>🍽️ Meu Prato Saudável</b><p>Comece pela proteína, depois vegetais e, por último, carboidratos. Mastigue bem, coma devagar e separe os líquidos das refeições conforme a orientação da sua equipe.</p><div class="row" style="margin:8px 0">${PF.map(f=>`<button class="chip ${pf.includes(f[0])?'on':''}" onclick="togPf('${f[0]}')">${f[1]}</button>`).join('')}</div>${S.profile.restr?'<p class="warn">Suas restrições cadastradas: '+S.profile.restr+'. Confira os ingredientes de cada ideia.</p>':''}${L.map(r=>`<div class="card" style="background:var(--cream);box-shadow:none"><div style="font-size:2em">${r[1]}</div><b>${r[0]}</b><br><small>Proteína: ${r[2]} · Vegetal: ${r[3]} · Complemento: ${r[4]}</small><p>${r[6]}</p></div>`).join('')||'<p class="muted">Nenhuma sugestão com esses filtros.</p>'}<p class="muted">Ideias educativas, sem porções. Teste alimentos novos aos poucos e anote sintomas. Não substitui a prescrição da sua nutricionista.</p></div>`}
+function togPf(t){pf=pf.includes(t)?pf.filter(x=>x!=t):[...pf,t];S.pf=pf;save();render()}
+function addSupp(){S.supps.push({n:$('#sn').value,dose:$('#sd').value||'—',h:$('#sh').value||'—',f:$('#sf').value});save();render()}
+function took(i){S.supps[i].last=today();S.tk.push({d:today(),n:S.supps[i].n});save();render()}
+function sym(s){S.symptoms.push({d:today(),s,i:$('#si').value});save();render()}
+function remind(){try{Notification.requestPermission().then(p=>{alert(p=='granted'?'Lembretes ativados enquanto o app estiver aberto.':'Permissão negada.')})}catch(e){alert('Notificações indisponíveis neste navegador.')}}
+function expo(){const a=document.createElement('a');a.href='data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(S,null,1));a.download='saude-em-dia.json';a.click()}
+function wipe(){if(confirm('Excluir todos os dados deste aparelho? Esta ação não pode ser desfeita.')){try{localStorage.removeItem(KEY)}catch(e){}location.reload()}}
+setInterval(()=>{try{const t=new Date().toTimeString().slice(0,5);if(Notification.permission=='granted')S.supps.forEach(s=>{if(s.h==t&&s.last!=today())(navigator.serviceWorker&&navigator.serviceWorker.ready?navigator.serviceWorker.ready.then(r=>r.showNotification('Saúde em Dia',{body:'Hora de: '+s.n,icon:'icons/icon-192.png'})):Promise.resolve(new Notification('Saúde em Dia',{body:'Hora de: '+s.n})))})}catch(e){}},60000);
+render();
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}
+</script></body></html>
